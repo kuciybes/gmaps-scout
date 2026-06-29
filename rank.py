@@ -19,6 +19,8 @@ with open("/home/adking/projects/gmaps-scout/out/results.json") as f:
         lat=d.get("latitude"); lon=d.get("longitude") or d.get("longtitude")
         if lat is None or lon is None: continue
         dist=hav(LAT0,LON0,lat,lon)
+        cid=str(d.get("cid") or "")
+        maps_url=f"https://maps.google.com/?cid={cid}" if cid else f"https://www.google.com/maps/search/?api=1&query={lat},{lon}"
         rows.append({
             "title": d.get("title",""),
             "category": d.get("category","") or "",
@@ -28,6 +30,7 @@ with open("/home/adking/projects/gmaps-scout/out/results.json") as f:
             "dist": round(dist),
             "address": (d.get("address") or "").replace("\n"," "),
             "web": d.get("web_site","") or "",
+            "maps_url": maps_url,
             "link": d.get("link","") or "",
         })
 
@@ -58,14 +61,13 @@ print("\n================ СОРТ: по рейтингу, затем по чи�
 table(by_rating)
 print(f"\n(глобальный средний рейтинг в зоне = {round(C,2)}, prior m={m})")
 print("\n================ УМНЫЙ ВЫБОР: взвешенный балл (рейтинг × вес отзывов) ================")
-print(f"{'#':>2}  {'Балл':>6} {'Рейтинг':>7} {'Отзывы':>7}  {'м':>4}  {'Категория':<22} Название")
 for i,r in enumerate(by_score[:15],1):
-    print(f"{i:>2}  {r['score']:>6} {r['rating']:>7} {r['reviews']:>7}  {r['dist']:>4}  {r['category'][:22]:<22} {r['title']}")
+    print(f"{i:>2}. {r['title']}  —  {r['rating']}★ / {r['reviews']} отз. / {r['dist']}м  →  {r['maps_url']}")
 
-# write CSV (sorted by rating then reviews)
+# write CSV (sorted by rating then reviews); maps_url first for quick access
 with open("/home/adking/projects/gmaps-scout/out/restaurants_500m.csv","w",newline="") as f:
     w=csv.writer(f)
-    w.writerow(["rank","rating","reviews","weighted_score","dist_m","price","category","title","address","web","maps_link"])
+    w.writerow(["rank","rating","reviews","weighted_score","dist_m","price","category","title","maps_url","address","web","gmaps_full_link"])
     for i,r in enumerate(by_rating,1):
-        w.writerow([i,r['rating'],r['reviews'],r['score'],r['dist'],r['price'],r['category'],r['title'],r['address'],r['web'],r['link']])
-print("\nCSV: out/restaurants_500m.csv")
+        w.writerow([i,r['rating'],r['reviews'],r['score'],r['dist'],r['price'],r['category'],r['title'],r['maps_url'],r['address'],r['web'],r['link']])
+print("\nCSV: out/restaurants_500m.csv (столбец maps_url — прямая ссылка на Google Maps)")
